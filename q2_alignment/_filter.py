@@ -100,3 +100,23 @@ def mask(alignment: skbio.TabularMSA, max_gap_frequency: float = 1.0,
                          "conservation filter." %
                          (str_passed_gap, str_passed_conservation))
     return result
+
+def slice(alignment: skbio.TabularMSA, reference_id: str,
+          start: int, end: int) -> skbio.TabularMSA:
+    if end <= start:
+        raise ValueError('end must be greater than start')
+    alignment.reassign_index(minter='id')
+    try:
+        non_gaps = ~alignment.loc[reference_id].gaps()
+    except KeyError:
+        raise KeyError('%s not found in alignment.' % reference_id)
+    count_non_gaps = non_gaps.sum()
+    if end >= count_non_gaps:
+        raise ValueError('end position (%d) is larger than the length '
+                         'of the reference sequence (%d)' % (end, count_non_gaps))
+    reference_array = np.zeros(alignment.shape[1]) - 1
+    reference_array[non_gaps] = range(0, non_gaps.sum())
+    aln_start = np.argwhere(reference_array == start)[0][0]
+    aln_end = np.argwhere(reference_array == end)[0][0]
+    alignment = alignment[:,aln_start:aln_end]
+    return alignment

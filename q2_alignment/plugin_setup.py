@@ -95,3 +95,23 @@ plugin.methods.register_function(
                  "chosen to reproduce the mask presented in Lane (1991)."),
     citations=[citations['lane1991']]
 )
+
+plugin.methods.register_function(
+    function=q2_alignment.slice,
+    inputs={'alignment': FeatureData[AlignedSequence]},
+    parameters={'reference_id': Str,
+                'start': Int % Range(0, None),
+                'end': Int % Range(1, None)},
+    outputs=[('sliced_alignment', FeatureData[AlignedSequence])],
+    input_descriptions={'alignment': 'The alignment to slice.'},
+    parameter_descriptions=
+               {'reference_id': 'The identifier of the sequence which the slice'
+                                ' positions correspond to.',
+                'start': 'The start position.',
+                'end': 'The end position.'},
+    output_descriptions={'sliced_alignment': 'The sliced alignment.'},
+    name='Slice alignment to position range',
+    description=('Create a subalignment retaining only the positions in '
+                 'the specified range with respect to reference sequence '
+                 'positions.')
+)

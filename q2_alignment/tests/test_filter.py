@@ -11,7 +11,7 @@ import numpy as np
 import unittest
 
 from q2_alignment._filter import _most_conserved
-from q2_alignment import mask
+from q2_alignment import mask, filter_sequences, filter_positions
 
 
 class MostConservedTests(unittest.TestCase):

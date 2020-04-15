@@ -7,11 +7,12 @@
 # ----------------------------------------------------------------------------
 
 from ._mafft import mafft, mafft_add
-from ._filter import mask, slice
+from ._filter import mask, filter_positions, filter_seqs
 from ._version import get_versions
 
 
 __version__ = get_versions()['version']
 del get_versions
 
-__all__ = ['mafft', 'mask', 'mafft_add', 'slice']
+__all__ = ['mafft', 'mask', 'mafft_add', 'filter_positions',
+           'filter_seqs']

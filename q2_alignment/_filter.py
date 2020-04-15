@@ -8,6 +8,9 @@
 
 import skbio
 import numpy as np
+import pandas as pd
+
+from q2_types.feature_data import DNAIterator
 
 
 def _most_conserved(frequencies, sequence_dtype, gap_mode='ignore'):
@@ -101,8 +104,11 @@ def mask(alignment: skbio.TabularMSA, max_gap_frequency: float = 1.0,
                          (str_passed_gap, str_passed_conservation))
     return result
 
-def slice(alignment: skbio.TabularMSA, reference_id: str,
-          start: int, end: int) -> skbio.TabularMSA:
+
+def filter_positions(alignment: skbio.TabularMSA,
+                     reference_id: str,
+                     start: int,
+                     end: int) -> skbio.TabularMSA:
     if end <= start:
         raise ValueError('end must be greater than start')
     alignment.reassign_index(minter='id')
@@ -113,10 +119,37 @@ def slice(alignment: skbio.TabularMSA, reference_id: str,
     count_non_gaps = non_gaps.sum()
     if end >= count_non_gaps:
         raise ValueError('end position (%d) is larger than the length '
-                         'of the reference sequence (%d)' % (end, count_non_gaps))
+                         'of the reference sequence (%d)' %
+                         (end, count_non_gaps))
     reference_array = np.zeros(alignment.shape[1]) - 1
     reference_array[non_gaps] = range(0, non_gaps.sum())
     aln_start = np.argwhere(reference_array == start)[0][0]
     aln_end = np.argwhere(reference_array == end)[0][0]
-    alignment = alignment[:,aln_start:aln_end]
+    alignment = alignment[:, aln_start:aln_end]
     return alignment
+
+
+def filter_seqs(seqs: DNAIterator,
+                max_gap_frequency: float = 1.0,  # frequency -> proportion
+                max_n_frequency: float = 1.0,
+                min_length: int = 0,
+                max_length: int = None) -> pd.Series:
+    result = pd.Series()
+    for seq in seqs:
+        seq_len = len(seq)
+        if seq_len < min_length or \
+           (max_length is not None and seq_len > max_length):
+            continue
+
+        gap_count = seq.gaps().sum()
+        frac_gap = gap_count / seq_len
+        if frac_gap > max_gap_frequency:
+            continue
+
+        degapped_seq = seq.degap()
+        frac_n = degapped_seq.frequencies(chars={'N'}, relative=True)
+        if frac_n['N'] > max_n_frequency:
+            continue
+
+        result[seq.metadata['id']] = seq
+    return result

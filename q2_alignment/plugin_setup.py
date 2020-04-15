@@ -6,8 +6,10 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import importlib
+
 from qiime2.plugin import (
-    Plugin, Float, Int, Bool, Range, Citations, Str, Choices)
+    Plugin, Float, Int, Bool, Range, Citations, Str, Choices, TypeMatch)
 from q2_types.feature_data import FeatureData, Sequence, AlignedSequence
 
 import q2_alignment
@@ -22,6 +24,8 @@ plugin = Plugin(
                  'and manipulating sequence alignments.'),
     short_description='Plugin for generating and manipulating alignments.'
 )
+
+importlib.import_module('q2_alignment._transformers')
 
 plugin.methods.register_function(
     function=q2_alignment.mafft,
@@ -97,21 +101,53 @@ plugin.methods.register_function(
 )
 
 plugin.methods.register_function(
-    function=q2_alignment.slice,
+    function=q2_alignment.filter_positions,
     inputs={'alignment': FeatureData[AlignedSequence]},
     parameters={'reference_id': Str,
                 'start': Int % Range(0, None),
                 'end': Int % Range(1, None)},
-    outputs=[('sliced_alignment', FeatureData[AlignedSequence])],
-    input_descriptions={'alignment': 'The alignment to slice.'},
-    parameter_descriptions=
-               {'reference_id': 'The identifier of the sequence which the slice'
-                                ' positions correspond to.',
-                'start': 'The start position.',
-                'end': 'The end position.'},
-    output_descriptions={'sliced_alignment': 'The sliced alignment.'},
-    name='Slice alignment to position range',
-    description=('Create a subalignment retaining only the positions in '
-                 'the specified range with respect to reference sequence '
+    outputs=[('filtered_alignment', FeatureData[AlignedSequence])],
+    input_descriptions={'alignment': 'The alignment to filter.'},
+    parameter_descriptions={
+        'reference_id': 'The identifier of the sequence which the slice'
+                        ' positions correspond to.',
+        'start': 'The start position.',
+        'end': 'The end position.'},
+    output_descriptions={
+        'filtered_alignment': 'The position-filtered alignment.'},
+    name='Filter positions from an alignment',
+    description=('Create a subalignment retaining only the specified '
                  'positions.')
+)
+
+T = TypeMatch([Sequence, AlignedSequence])
+
+plugin.methods.register_function(
+    function=q2_alignment.filter_seqs,
+    inputs={'seqs': FeatureData[T]},
+    parameters={
+        'max_gap_frequency': Float % Range(0.0, 1.0, inclusive_end=True),
+        'max_n_frequency': Float % Range(0.0, 1.0, inclusive_end=True),
+        'min_length': Int % Range(0, None),
+        'max_length': Int % Range(1, None)},
+    outputs=[('filtered_seqs', FeatureData[T])],
+    input_descriptions={'seqs': 'The sequences to be filtered.'},
+    parameter_descriptions={
+        'max_gap_frequency': ('The maximum fraction of a sequence that can '
+                              'be gaps for the sequence to be retained in '
+                              'the output.'),
+        'max_n_frequency': ('The maximum fraction of a sequence that can '
+                            'be N characters for the sequence to be retained '
+                            'in the output.'),
+        'min_length': ('The minimum length of a sequence that can be '
+                       'retained in the ouput'),
+        'max_length': ('The maximum length of a sequence that can be '
+                       'retained in the ouput'),
+                       },
+    output_descriptions={
+        'filtered_seqs': 'The sequences that are retained following '
+                         'filtering.'},
+    name='Filter sequences.',
+    description=('Remove sequences from a collection of sequences based on '
+                 'characteristics of the sequences.')
 )

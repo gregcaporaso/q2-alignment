@@ -11,7 +11,7 @@ import numpy as np
 import unittest
 
 from q2_alignment._filter import _most_conserved
-from q2_alignment import mask, filter_sequences, filter_positions
+from q2_alignment import mask, filter_seqs, filter_positions
 
 
 class MostConservedTests(unittest.TestCase):
@@ -164,3 +164,23 @@ class MaskTests(unittest.TestCase):
         alignment = skbio.TabularMSA([])
         with self.assertRaises(ValueError):
             mask(alignment)
+
+class FilterPositionsTests(unittest.TestCase):
+
+    def test_retain_full_reference(self):
+        alignment = skbio.TabularMSA(
+            [skbio.DNA('CCA-T-AGA', metadata={'id': 's1', 'description': ''}),
+             skbio.DNA('T---T-ATA', metadata={'id': 's2', 'description': ''}),
+             skbio.DNA('---GTTATA', metadata={'id': 's3', 'description': ''})]
+        )
+        obs = filter_positions(alignment, 's1', 1, 7)
+        self.assertEqual(obs, alignment)
+        obs = filter_positions(alignment, 's2', 1, 5)
+        self.assertEqual(obs, alignment)
+        obs = filter_positions(alignment, 's3', 1, 6)
+        exp = skbio.TabularMSA(
+            [skbio.DNA('-T-AGA', metadata={'id': 's1', 'description': ''}),
+             skbio.DNA('-T-ATA', metadata={'id': 's2', 'description': ''}),
+             skbio.DNA('GTTATA', metadata={'id': 's3', 'description': ''})]
+        )
+        self.assertEqual(obs, exp)

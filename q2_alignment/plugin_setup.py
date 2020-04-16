@@ -104,15 +104,16 @@ plugin.methods.register_function(
     function=q2_alignment.filter_positions,
     inputs={'alignment': FeatureData[AlignedSequence]},
     parameters={'reference_id': Str,
-                'start': Int % Range(0, None),
+                'start': Int % Range(1, None),
                 'end': Int % Range(1, None)},
     outputs=[('filtered_alignment', FeatureData[AlignedSequence])],
     input_descriptions={'alignment': 'The alignment to filter.'},
     parameter_descriptions={
         'reference_id': 'The identifier of the sequence which the slice'
                         ' positions correspond to.',
-        'start': 'The start position.',
-        'end': 'The end position.'},
+        'start': 'The start position (1-based indexing).',
+        'end': 'The end position (1-based indexing). The end position '
+               'is inclusive.'},
     output_descriptions={
         'filtered_alignment': 'The position-filtered alignment.'},
     name='Filter positions from an alignment',

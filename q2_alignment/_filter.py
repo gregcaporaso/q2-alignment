@@ -109,7 +109,11 @@ def filter_positions(alignment: skbio.TabularMSA,
                      reference_id: str,
                      start: int,
                      end: int) -> skbio.TabularMSA:
-    if end <= start:
+    # convert the start position to zero-based indexing. since the 
+    # end position specified by the user is intended to be inclusive
+    # no modification is made to it. 
+    start = start - 1
+    if end < start:
         raise ValueError('end must be greater than start')
     alignment.reassign_index(minter='id')
     try:
@@ -117,15 +121,18 @@ def filter_positions(alignment: skbio.TabularMSA,
     except KeyError:
         raise KeyError('%s not found in alignment.' % reference_id)
     count_non_gaps = non_gaps.sum()
-    if end >= count_non_gaps:
+    if end > count_non_gaps:
         raise ValueError('end position (%d) is larger than the length '
                          'of the reference sequence (%d)' %
                          (end, count_non_gaps))
     reference_array = np.zeros(alignment.shape[1]) - 1
     reference_array[non_gaps] = range(0, non_gaps.sum())
     aln_start = np.argwhere(reference_array == start)[0][0]
-    aln_end = np.argwhere(reference_array == end)[0][0]
-    alignment = alignment[:, aln_start:aln_end]
+    if end == count_non_gaps:
+        alignment = alignment[:, aln_start:]
+    else:
+        aln_end = np.argwhere(reference_array == end)[0][0]
+    
     return alignment
 
 
